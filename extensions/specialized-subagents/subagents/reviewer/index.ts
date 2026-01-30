@@ -19,11 +19,14 @@ import {
 import { Container, Markdown, Spacer, Text } from "@mariozechner/pi-tui";
 import { Type } from "@sinclair/typebox";
 import { SubagentFooter } from "../../components";
-import { executeSubagent, resolveModel, resolveSkillsByName } from "../../lib";
+import {
+  executeSubagent,
+  resolveSkillsByName,
+  selectSubagentModel,
+} from "../../lib";
 import type { SubagentToolCall } from "../../lib/types";
 import { getSpinnerFrame, INDICATOR } from "../../lib/ui/spinner";
 import { formatSubagentStats, pluralize } from "../../lib/ui/stats";
-import { MODEL } from "./config";
 import { REVIEWER_SYSTEM_PROMPT } from "./system-prompt";
 import { formatReviewerToolCall } from "./tool-formatter";
 import { createReviewerTools } from "./tools";
@@ -176,7 +179,15 @@ Pass relevant skills (e.g., 'ios-26', 'drizzle-orm') to provide specialized cont
       }, 80);
 
       try {
-        const model = resolveModel(MODEL, ctx);
+        const selection = selectSubagentModel(
+          {
+            subagent: "reviewer",
+            userMessage: diff,
+            hints: { focus, context },
+          },
+          ctx,
+        );
+        const model = selection.model;
         resolvedModel = { provider: model.provider, id: model.id };
 
         // Publish resolved provider/model as early as possible for footer rendering.
@@ -216,7 +227,7 @@ Pass relevant skills (e.g., 'ios-26', 'drizzle-orm') to provide specialized cont
             skills: resolvedSkills,
             tools,
             customTools: createReviewerTools(),
-            thinkingLevel: "low",
+            thinkingLevel: selection.thinkingLevel,
             logging: {
               enabled: true,
               debug: true,

@@ -14,10 +14,9 @@ import { Container, Markdown, Spacer, Text } from "@mariozechner/pi-tui";
 import { Type } from "@sinclair/typebox";
 
 import { SubagentFooter } from "../../components";
-import { executeSubagent, resolveModel } from "../../lib";
+import { executeSubagent, selectSubagentModel } from "../../lib";
 import type { SubagentToolCall } from "../../lib/types";
 import { getSpinnerFrame } from "../../lib/ui/spinner";
-import { MODEL } from "./config";
 import { JESTER_SYSTEM_PROMPT } from "./system-prompt";
 import type { JesterDetails, JesterInput } from "./types";
 
@@ -83,7 +82,11 @@ export function createJesterTool(): ToolDefinition<
       }, 80);
 
       try {
-        const model = resolveModel(MODEL, ctx);
+        const selection = selectSubagentModel(
+          { subagent: "jester", userMessage: question },
+          ctx,
+        );
+        const model = selection.model;
         resolvedModel = { provider: model.provider, id: model.id };
 
         // Publish resolved provider/model as early as possible for footer rendering.
@@ -108,7 +111,7 @@ export function createJesterTool(): ToolDefinition<
             systemPrompt: JESTER_SYSTEM_PROMPT,
             tools: [],
             customTools: [],
-            thinkingLevel: "off",
+            thinkingLevel: selection.thinkingLevel,
             logging: {
               enabled: true,
               debug: true,
