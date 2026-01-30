@@ -140,3 +140,6 @@ vite.config.ts.timestamp-*
 
 
 .DS_Store
+.osgrep
+
+pi-*.html
