@@ -8,12 +8,9 @@
   },
   "pi": {
     "extensions": [
-      "./extensions/defaults/index.ts",
-      "./extensions/guardrails/index.ts",
-      "./extensions/presenter/index.ts",
-      "./extensions/specialized-subagents/index.ts",
-      "./extensions/the-dumb-zone/index.ts",
-      "./extensions/*.ts"
+      "./extensions",
+      "extensions/*/index.ts",
+      "extensions/*.ts"
     ],
     "skills": [
       "./skills"
