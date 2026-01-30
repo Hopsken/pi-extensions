@@ -17,11 +17,9 @@ export {
   type GitHubUser,
   type ParsedGitHubUrl,
   parseGitHubUrl,
-} from "./clients";
-// Constants
-export { PROVIDER } from "./constants";
+} from './clients'
 // Core executor
-export { executeSubagent, filterThinkingTags } from "./executor";
+export { executeSubagent, filterThinkingTags } from './executor'
 // Logging
 export {
   createRunLogger,
@@ -29,18 +27,17 @@ export {
   getLogDirectory,
   type RunLogger,
   sanitizePath,
-} from "./logging";
+} from './logging'
 // Model resolution
-export { resolveModel } from "./model-resolver";
 export {
   selectSubagentModel,
   type ModelTier,
   type SelectedModel,
   type SelectModelInput,
   type SubagentName,
-} from "./model-policy";
+} from './model-policy'
 // Skills
-export { type ResolveSkillsResult, resolveSkillsByName } from "./skills";
+export { type ResolveSkillsResult, resolveSkillsByName } from './skills'
 // Types
 export type {
   OnTextUpdate,
@@ -49,7 +46,7 @@ export type {
   SubagentResult,
   SubagentToolCall,
   SubagentUsage,
-} from "./types";
+} from './types'
 // UI
 export {
   formatCost,
@@ -66,4 +63,4 @@ export {
   renderStreamingStatus,
   renderSubagentCallHeader,
   SPINNER_FRAMES,
-} from "./ui";
+} from './ui'
