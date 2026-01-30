@@ -1,4 +1,4 @@
-# @aliou/pi-guardrails
+# @hopsken/pi-guardrails
 
 ## 0.5.1
 
@@ -11,7 +11,6 @@
 ### Minor Changes
 
 - cb97920: Add enforce-package-manager guardrail
-
   - New `enforcePackageManager` feature (disabled by default)
   - Supports npm, pnpm, and bun (npm is default)
   - Blocks commands using non-selected package managers
@@ -29,7 +28,6 @@
 ### Minor Changes
 
 - 9916f1f: Add preventPython guardrail to block Python tools.
-
   - Block python, python3, pip, pip3, poetry, pyenv, virtualenv, and venv commands.
   - Recommend using uv for Python package management instead.
   - Disabled by default, configurable via settings.
@@ -40,7 +38,6 @@
 ### Minor Changes
 
 - fe26e11: Configurable rules, settings UI, and event-based architecture.
-
   - Config system with global (~/.pi/agent/extensions/guardrails.json) and project (.pi/extensions/guardrails.json) scoped files.
   - /guardrails:settings command with sectioned tabbed UI (Local/Global).
   - All hooks configurable: feature toggles, patterns, allow/deny lists.

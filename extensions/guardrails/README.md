@@ -4,14 +4,14 @@ Security hooks to prevent potentially dangerous operations.
 
 ## Demo
 
-<video src="https://assets.aliou.me/pi-extensions/2026-01-26-guardrails-demo.mp4" controls playsinline muted></video>
+<video src="https://assets.hopsken.me/pi-extensions/2026-01-26-guardrails-demo.mp4" controls playsinline muted></video>
 
 ## Installation
 
 Install via the pi-extensions package:
 
 ```bash
-pi install git:github.com/aliou/pi-extensions
+pi install git:github.com/hopsken/pi-extensions
 ```
 
 Or selectively in your `settings.json`:
@@ -20,7 +20,7 @@ Or selectively in your `settings.json`:
 {
   "packages": [
     {
-      "source": "git:github.com/aliou/pi-extensions",
+      "source": "git:github.com/hopsken/pi-extensions",
       "extensions": ["extensions/guardrails"]
     }
   ]
@@ -30,7 +30,7 @@ Or selectively in your `settings.json`:
 Or from npm:
 
 ```bash
-pi install npm:@aliou/pi-guardrails
+pi install npm:@hopsken/pi-guardrails
 ```
 
 ## Features
@@ -51,6 +51,7 @@ Configuration is loaded from two optional JSON files, merged in order (project o
 ### Settings Command
 
 Run `/guardrails:settings` to open an interactive settings UI with two tabs:
+
 - **Local**: edit project-scoped config (`.pi/extensions/guardrails.json`)
 - **Global**: edit global config (`~/.pi/agent/extensions/guardrails.json`)
 
@@ -100,40 +101,40 @@ All fields are optional. Missing fields use defaults shown above.
 
 #### `features`
 
-| Key | Default | Description |
-|---|---|---|
-| `preventBrew` | `false` | Block Homebrew install/upgrade commands |
-| `preventPython` | `false` | Block python/pip/poetry commands (use uv instead) |
-| `protectEnvFiles` | `true` | Block access to `.env` files containing secrets |
-| `permissionGate` | `true` | Prompt for confirmation on dangerous commands |
-| `enforcePackageManager` | `false` | Enforce a specific Node package manager |
+| Key                     | Default | Description                                       |
+| ----------------------- | ------- | ------------------------------------------------- |
+| `preventBrew`           | `false` | Block Homebrew install/upgrade commands           |
+| `preventPython`         | `false` | Block python/pip/poetry commands (use uv instead) |
+| `protectEnvFiles`       | `true`  | Block access to `.env` files containing secrets   |
+| `permissionGate`        | `true`  | Prompt for confirmation on dangerous commands     |
+| `enforcePackageManager` | `false` | Enforce a specific Node package manager           |
 
 #### `packageManager`
 
-| Key | Default | Description |
-|---|---|---|
+| Key        | Default | Description                                               |
+| ---------- | ------- | --------------------------------------------------------- |
 | `selected` | `"npm"` | Package manager to enforce: `"npm"`, `"pnpm"`, or `"bun"` |
 
 #### `envFiles`
 
-| Key | Default | Description |
-|---|---|---|
-| `protectedPatterns` | `["\\.env$", "\\.env\\.local$"]` | Regex patterns for files to protect |
-| `allowedPatterns` | `["\\.(example\|sample\|test)\\.env$", ...]` | Regex patterns for allowed exceptions |
-| `protectedDirectories` | `[]` | Regex patterns for directories to protect |
-| `protectedTools` | `["read", "write", "edit", "bash", "grep", "find", "ls"]` | Tools to intercept |
-| `onlyBlockIfExists` | `true` | Only block if the file exists on disk |
-| `blockMessage` | See defaults | Message shown when blocked. Supports `{file}` placeholder |
+| Key                    | Default                                                   | Description                                               |
+| ---------------------- | --------------------------------------------------------- | --------------------------------------------------------- |
+| `protectedPatterns`    | `["\\.env$", "\\.env\\.local$"]`                          | Regex patterns for files to protect                       |
+| `allowedPatterns`      | `["\\.(example\|sample\|test)\\.env$", ...]`              | Regex patterns for allowed exceptions                     |
+| `protectedDirectories` | `[]`                                                      | Regex patterns for directories to protect                 |
+| `protectedTools`       | `["read", "write", "edit", "bash", "grep", "find", "ls"]` | Tools to intercept                                        |
+| `onlyBlockIfExists`    | `true`                                                    | Only block if the file exists on disk                     |
+| `blockMessage`         | See defaults                                              | Message shown when blocked. Supports `{file}` placeholder |
 
 #### `permissionGate`
 
-| Key | Default | Description |
-|---|---|---|
-| `patterns` | See defaults | Array of `{ pattern, description }` for dangerous commands |
-| `customPatterns` | Not set | If set, replaces `patterns` entirely |
-| `requireConfirmation` | `true` | Show confirmation dialog (if `false`, just warns) |
-| `allowedPatterns` | `[]` | Regex patterns that bypass the gate |
-| `autoDenyPatterns` | `[]` | Regex patterns that are blocked immediately without dialog |
+| Key                   | Default      | Description                                                |
+| --------------------- | ------------ | ---------------------------------------------------------- |
+| `patterns`            | See defaults | Array of `{ pattern, description }` for dangerous commands |
+| `customPatterns`      | Not set      | If set, replaces `patterns` entirely                       |
+| `requireConfirmation` | `true`       | Show confirmation dialog (if `false`, just warns)          |
+| `allowedPatterns`     | `[]`         | Regex patterns that bypass the gate                        |
+| `autoDenyPatterns`    | `[]`         | Regex patterns that are blocked immediately without dialog |
 
 ### Examples
 
@@ -155,7 +156,10 @@ Add a custom dangerous command pattern:
     "patterns": [
       { "pattern": "rm\\s+-rf", "description": "recursive force delete" },
       { "pattern": "\\bsudo\\b", "description": "superuser command" },
-      { "pattern": "docker\\s+system\\s+prune", "description": "docker system prune" }
+      {
+        "pattern": "docker\\s+system\\s+prune",
+        "description": "docker system prune"
+      }
     ]
   }
 }
@@ -194,11 +198,16 @@ Emitted when a tool call is blocked by any guardrail.
 
 ```typescript
 interface GuardrailsBlockedEvent {
-  feature: "preventBrew" | "preventPython" | "protectEnvFiles" | "permissionGate" | "enforcePackageManager";
-  toolName: string;
-  input: Record<string, unknown>;
-  reason: string;
-  userDenied?: boolean;
+  feature:
+    | 'preventBrew'
+    | 'preventPython'
+    | 'protectEnvFiles'
+    | 'permissionGate'
+    | 'enforcePackageManager'
+  toolName: string
+  input: Record<string, unknown>
+  reason: string
+  userDenied?: boolean
 }
 ```
 
@@ -208,9 +217,9 @@ Emitted when a dangerous command is detected (before the confirmation dialog).
 
 ```typescript
 interface GuardrailsDangerousEvent {
-  command: string;
-  description: string;
-  pattern: string;
+  command: string
+  description: string
+  pattern: string
 }
 ```
 
@@ -223,6 +232,7 @@ The [presenter extension](../presenter) listens for `guardrails:dangerous` event
 Blocks bash commands that attempt to install packages using Homebrew. Disabled by default. Enable via config if your project uses Nix.
 
 Blocked patterns:
+
 - `brew install`
 - `brew cask install`
 - `brew bundle`
@@ -234,6 +244,7 @@ Blocked patterns:
 Blocks bash commands that use Python tooling directly. Disabled by default. Enable if your project uses uv for Python management.
 
 Blocked patterns:
+
 - `python`, `python3`
 - `pip`, `pip3`
 - `poetry`
@@ -243,6 +254,7 @@ Blocked patterns:
 ### protect-env-files
 
 Prevents accessing `.env` files that might contain secrets. Only allows access to safe variants:
+
 - `.env.example`
 - `.env.sample`
 - `.env.test`
@@ -255,6 +267,7 @@ Covers tools: `read`, `write`, `edit`, `bash`, `grep`, `find`, `ls` (configurabl
 ### permission-gate
 
 Prompts user confirmation before executing dangerous commands:
+
 - `rm -rf` (recursive force delete)
 - `sudo` (superuser command)
 - `: | sh` (piped shell execution)
@@ -270,6 +283,7 @@ All patterns are configurable. Supports allow-lists and auto-deny lists.
 Enforces using a specific Node package manager. Disabled by default. When enabled, blocks commands using non-selected package managers.
 
 Configure via `packageManager.selected`:
+
 - `"npm"` (default)
 - `"pnpm"`
 - `"bun"`

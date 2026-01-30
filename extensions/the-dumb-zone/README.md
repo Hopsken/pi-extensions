@@ -11,7 +11,7 @@ Inspired by [this video](https://www.youtube.com/watch?v=rmvDxxNubIg).
 Monitors token usage relative to the model's context window. High utilization correlates with degraded response quality.
 
 | Threshold | Default | Post-Compaction |
-|-----------|---------|-----------------|
+| --------- | ------- | --------------- |
 | Warning   | 30%     | 21%             |
 | Danger    | 35%     | 24.5%           |
 | Critical  | 50%     | 35%             |
@@ -41,19 +41,19 @@ export const CONTEXT_THRESHOLDS = {
   WARNING: 30,
   DANGER: 35,
   CRITICAL: 50,
-} as const;
+} as const
 
-export const POST_COMPACTION_MULTIPLIER = 0.7;
+export const POST_COMPACTION_MULTIPLIER = 0.7
 
 export const DUMB_ZONE_PATTERNS: readonly RegExp[] = [
   /excellent catch/i,
   /good\s+catch/i,
   /you are absolutely right/i,
-];
+]
 
-export const OVERLAY_COOLDOWN_MS = 30000;
+export const OVERLAY_COOLDOWN_MS = 30000
 ```
 
 ## Dependencies
 
-- `@aliou/tui-utils` - for themed box rendering
+- `@hopsken/tui-utils` - for themed box rendering

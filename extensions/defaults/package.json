@@ -1,5 +1,5 @@
 {
-  "name": "@aliou/pi-defaults",
+  "name": "@hopsken/pi-defaults",
   "private": true,
   "pi": {
     "extensions": [

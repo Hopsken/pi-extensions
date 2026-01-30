@@ -1,5 +1,5 @@
 {
-  "name": "@aliou/pi-specialized-subagents",
+  "name": "@hopsken/pi-specialized-subagents",
   "private": true,
   "pi": {
     "extensions": [

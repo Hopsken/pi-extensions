@@ -1,9 +1,0 @@
-{
-  "name": "@hopsken/pi-web-search",
-  "private": true,
-  "pi": {
-    "extensions": [
-      "./index.ts"
-    ]
-  }
-}

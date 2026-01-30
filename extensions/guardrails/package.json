@@ -1,5 +1,5 @@
 {
-  "name": "@aliou/pi-guardrails",
+  "name": "@hopsken/pi-guardrails",
   "version": "0.5.1",
   "type": "module",
   "private": false,
@@ -12,7 +12,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/aliou/pi-extensions"
+    "url": "https://github.com/hopsken/pi-extensions"
   },
   "pi": {
     "extensions": [
