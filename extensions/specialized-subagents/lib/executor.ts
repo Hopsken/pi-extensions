@@ -179,7 +179,7 @@ export async function executeSubagent(
         onToolUpdate?.([...toolCalls.values()]);
         logger?.logToolEnd(existing).catch(() => {});
 
-        // Capture tool cost from result details (e.g., Exa API costs)
+        // Capture tool cost from result details (e.g., external API costs)
         const resultDetails = event.result?.details as
           | { cost?: number }
           | undefined;

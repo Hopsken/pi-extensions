@@ -70,7 +70,7 @@ export interface SubagentUsage {
   estimatedTokens: number;
   /** LLM cost in USD (if available) */
   llmCost?: number;
-  /** Tool/API cost in USD (e.g., Exa, GitHub) */
+  /** Tool/API cost in USD (e.g., GitHub, search providers) */
   toolCost?: number;
   /** Total cost in USD (llmCost + toolCost) */
   totalCost?: number;

@@ -46,7 +46,7 @@ Use the \`lookout\` tool to find code by functionality or concept in the local c
 - Known file path or existing doc/plan -> use \`read\` directly
 - Simple exact string search -> use \`grep\` directly
 - Planning, strategy, or request for an implementation plan -> use \`oracle\`
-- External/web research -> use \`scout\` instead
+- External/web research -> use \`web_search\` / \`web_fetch\` instead
 
 **Example:**
 \`\`\`json
