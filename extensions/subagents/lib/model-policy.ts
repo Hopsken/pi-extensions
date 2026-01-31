@@ -85,6 +85,7 @@ function tierPatterns(tier: ModelTier): TierPattern[] {
       ]
     case 'standard':
       return [
+        { kind: 'gemini-flash', re: /flash/i },
         {
           kind: 'claude-sonnet',
           // Match token "sonnet" in common Anthropic IDs:
@@ -94,10 +95,10 @@ function tierPatterns(tier: ModelTier): TierPattern[] {
           version: id => extractClaudeFamilyVersion(id, 'sonnet'),
         },
         { kind: 'gpt-5', re: /gpt[-_ ]?5/i, version: extractGptVersion },
-        { kind: 'gemini-pro', re: /gemini.*pro/i },
       ]
     case 'simple':
       return [
+        { kind: 'gemini-flash', re: /flash/i },
         {
           kind: 'claude-haiku',
           // Match token "haiku" in common Anthropic IDs:
@@ -106,7 +107,6 @@ function tierPatterns(tier: ModelTier): TierPattern[] {
           re: /(?:^|[-_ ])haiku(?:$|[-_ ])/i,
           version: id => extractClaudeFamilyVersion(id, 'haiku'),
         },
-        { kind: 'gemini-flash', re: /flash/i },
       ]
   }
 }
