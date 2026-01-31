@@ -82,8 +82,9 @@ export function createJesterTool(): ToolDefinition<
       }, 80);
 
       try {
+        // Jester always uses the simplest/cheapest model tier
         const selection = selectSubagentModel(
-          { subagent: "jester", userMessage: question },
+          { tier: "simple", userMessage: question },
           ctx,
         );
         const model = selection.model;

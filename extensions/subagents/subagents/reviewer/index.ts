@@ -92,6 +92,41 @@ function buildUserMessage(input: ReviewerInput): string {
   return parts.join("\n");
 }
 
+/** Estimate model tier based on review complexity */
+function estimateReviewerTier(input: ReviewerInput): 'complex' | 'standard' {
+  const combined = `${input.diff} ${input.focus || ''} ${input.context || ''}`.toLowerCase()
+  
+  // Complex for security/performance-focused reviews
+  const criticalKeywords = [
+    'security',
+    'vulnerability',
+    'auth',
+    'permission',
+    'sqli',
+    'xss',
+    'csrf',
+    'rce',
+    'perf',
+    'performance',
+    'latency',
+    'memory',
+    'leak',
+    'concurrency',
+  ]
+  
+  if (criticalKeywords.some(keyword => combined.includes(keyword))) {
+    return 'complex'
+  }
+  
+  // Large diffs need more reasoning
+  const diffKeywords = ['files changed', 'diff', 'patch']
+  if (diffKeywords.some(keyword => combined.includes(keyword)) && combined.length > 2000) {
+    return 'complex'
+  }
+  
+  return 'standard'
+}
+
 /** Create the reviewer tool definition for use in extensions */
 export function createReviewerTool(): ToolDefinition<
   typeof parameters,
@@ -179,9 +214,11 @@ Pass relevant skills (e.g., 'ios-26', 'drizzle-orm') to provide specialized cont
       }, 80);
 
       try {
+        // Reviewer determines its own tier based on review complexity
+        const tier = estimateReviewerTier({ diff, focus, context })
         const selection = selectSubagentModel(
           {
-            subagent: "reviewer",
+            tier,
             userMessage: diff,
             hints: { focus, context },
           },

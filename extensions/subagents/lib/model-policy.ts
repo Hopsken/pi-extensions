@@ -1,20 +1,22 @@
 /**
  * Intelligent model selection for specialized subagents.
  *
- * Option 1 (heuristics only): choose a model based on the task complexity,
- * then pick the best available model from the registry.
+ * Subagents determine their own model tier based on task complexity,
+ * and this module selects the best available model from the registry.
  */
 
 import type { Model } from '@mariozechner/pi-ai'
 import type { ExtensionContext } from '@mariozechner/pi-coding-agent'
 
-export type SubagentName = 'oracle' | 'reviewer' | 'lookout' | 'jester'
-
 export type ModelTier = 'complex' | 'standard' | 'simple'
 
 export interface SelectModelInput {
-  subagent: SubagentName
-  userMessage: string
+  /** The desired model tier - determined by the subagent */
+  tier: ModelTier
+  /** Optional thinking level override (defaults based on tier) */
+  thinkingLevel?: 'low' | 'medium' | 'high'
+  /** Original user message (for logging/debugging) */
+  userMessage?: string
   /** Optional extra signals (e.g. reviewer focus). */
   hints?: Record<string, unknown>
 }
@@ -24,97 +26,6 @@ export interface SelectedModel {
   modelId: string
   tier: ModelTier
   thinkingLevel: 'low' | 'medium' | 'high'
-}
-
-function normalize(text: string): string {
-  return text.toLowerCase()
-}
-
-function includesAny(text: string, needles: string[]): boolean {
-  return needles.some(n => text.includes(n))
-}
-
-function estimateTier(subagent: SubagentName, userMessage: string): ModelTier {
-  const t = normalize(userMessage)
-
-  // Jester is always simple/cheap.
-  if (subagent === 'jester') return 'simple'
-
-  // Oracle is usually complex reasoning/planning.
-  if (subagent === 'oracle') {
-    if (
-      includesAny(t, [
-        'architecture',
-        'design',
-        'refactor',
-        'debug',
-        'root cause',
-        'race condition',
-        'performance',
-        'optimize',
-        'threat model',
-        'security',
-        'plan',
-        'migration',
-      ])
-    ) {
-      return 'complex'
-    }
-
-    // If question seems short/straightforward, keep standard.
-    return t.length < 200 ? 'standard' : 'complex'
-  }
-
-  // Reviewer: complex for security/perf/large diffs, otherwise standard.
-  if (subagent === 'reviewer') {
-    if (
-      includesAny(t, [
-        'security',
-        'vulnerability',
-        'auth',
-        'permission',
-        'sqli',
-        'xss',
-        'csrf',
-        'rce',
-        'perf',
-        'performance',
-        'latency',
-        'memory',
-        'leak',
-        'concurrency',
-      ])
-    ) {
-      return 'complex'
-    }
-
-    // Heuristic: mentions many files/lines
-    if (includesAny(t, ['files changed', 'diff', 'patch']) && t.length > 2000) {
-      return 'complex'
-    }
-
-    return 'standard'
-  }
-
-  // Lookout: tools do the work; keep it cheap unless explanation-heavy.
-  if (subagent === 'lookout') {
-    if (
-      includesAny(t, [
-        'explain',
-        'how does',
-        'walk me through',
-        'trace',
-        'data flow',
-        'control flow',
-        'end-to-end',
-      ])
-    ) {
-      return 'standard'
-    }
-    return 'simple'
-  }
-
-  return 'standard'
 }
 
 function tierToThinkingLevel(tier: ModelTier): 'low' | 'medium' | 'high' {
@@ -399,8 +310,8 @@ export function selectSubagentModel(
   input: SelectModelInput,
   ctx: ExtensionContext,
 ): SelectedModel {
-  const tier = estimateTier(input.subagent, input.userMessage)
-  const thinkingLevel = tierToThinkingLevel(tier)
+  const { tier } = input
+  const thinkingLevel = input.thinkingLevel ?? tierToThinkingLevel(tier)
 
   const model = resolveBestAvailable(ctx, tier)
 

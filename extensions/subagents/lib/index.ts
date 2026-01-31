@@ -34,7 +34,6 @@ export {
   type ModelTier,
   type SelectedModel,
   type SelectModelInput,
-  type SubagentName,
 } from './model-policy'
 // Skills
 export { type ResolveSkillsResult, resolveSkillsByName } from './skills'
