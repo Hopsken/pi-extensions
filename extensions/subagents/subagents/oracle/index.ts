@@ -74,34 +74,6 @@ const parameters = Type.Object({
   ),
 })
 
-/** Estimate model tier based on task complexity */
-function estimateOracleTier(task: string): 'complex' | 'standard' {
-  const t = task.toLowerCase()
-
-  // Complex reasoning keywords
-  const complexKeywords = [
-    'architecture',
-    'design',
-    'refactor',
-    'debug',
-    'root cause',
-    'race condition',
-    'performance',
-    'optimize',
-    'threat model',
-    'security',
-    'plan',
-    'migration',
-  ]
-
-  if (complexKeywords.some(keyword => t.includes(keyword))) {
-    return 'complex'
-  }
-
-  // If question seems short/straightforward, keep standard
-  return t.length < 200 ? 'standard' : 'complex'
-}
-
 /** Format files for context */
 async function formatFilesForContext(
   files: string[],
@@ -165,9 +137,9 @@ Pass relevant skills (e.g., 'ios-26', 'drizzle-orm') to provide specialized cont
     async execute(
       _toolCallId: string,
       args: OracleInput,
+      signal: AbortSignal,
       onUpdate: AgentToolUpdateCallback<OracleDetails> | undefined,
       ctx: ExtensionContext,
-      signal?: AbortSignal,
     ) {
       const { task, context, files, skills: skillNames } = args
 
@@ -512,10 +484,10 @@ Pass relevant skills (e.g., 'ios-26', 'drizzle-orm') to provide specialized cont
 /** Execute the oracle subagent directly (without tool wrapper) */
 export async function executeOracle(
   input: OracleInput,
+  signal: AbortSignal,
+  onUpdate: AgentToolUpdateCallback<OracleDetails>,
   ctx: ExtensionContext,
-  onUpdate?: AgentToolUpdateCallback<OracleDetails>,
-  signal?: AbortSignal,
 ): Promise<AgentToolResult<OracleDetails>> {
   const tool = createOracleTool()
-  return tool.execute('direct', input, onUpdate, ctx, signal)
+  return tool.execute('direct', input, signal, onUpdate, ctx)
 }

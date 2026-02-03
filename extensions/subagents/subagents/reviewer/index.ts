@@ -9,28 +9,28 @@ import type {
   Skill,
   ToolDefinition,
   ToolRenderResultOptions,
-} from "@mariozechner/pi-coding-agent";
+} from '@mariozechner/pi-coding-agent'
 import {
   createBashTool,
   createReadOnlyTools,
   getMarkdownTheme,
   type Theme,
-} from "@mariozechner/pi-coding-agent";
-import { Container, Markdown, Spacer, Text } from "@mariozechner/pi-tui";
-import { Type } from "@sinclair/typebox";
-import { SubagentFooter } from "../../components";
+} from '@mariozechner/pi-coding-agent'
+import { Container, Markdown, Spacer, Text } from '@mariozechner/pi-tui'
+import { Type } from '@sinclair/typebox'
+import { SubagentFooter } from '../../components'
 import {
   executeSubagent,
   resolveSkillsByName,
   selectSubagentModel,
-} from "../../lib";
-import type { SubagentToolCall } from "../../lib/types";
-import { getSpinnerFrame, INDICATOR } from "../../lib/ui/spinner";
-import { formatSubagentStats, pluralize } from "../../lib/ui/stats";
-import { REVIEWER_SYSTEM_PROMPT } from "./system-prompt";
-import { formatReviewerToolCall } from "./tool-formatter";
-import { createReviewerTools } from "./tools";
-import type { ReviewerDetails, ReviewerInput } from "./types";
+} from '../../lib'
+import type { SubagentToolCall } from '../../lib/types'
+import { getSpinnerFrame, INDICATOR } from '../../lib/ui/spinner'
+import { formatSubagentStats, pluralize } from '../../lib/ui/stats'
+import { REVIEWER_SYSTEM_PROMPT } from './system-prompt'
+import { formatReviewerToolCall } from './tool-formatter'
+import { createReviewerTools } from './tools'
+import type { ReviewerDetails, ReviewerInput } from './types'
 
 /** System prompt guidance for reviewer tool usage */
 export const REVIEWER_GUIDANCE = `
@@ -50,21 +50,21 @@ Use reviewer for fast, high-signal code review feedback on diffs. It acts like a
 
 **Output format:**
 Summary, Findings with [P0-P3], Verdict.
-`;
+`
 
 const parameters = Type.Object({
   diff: Type.String({
     description:
-      "Freeform description of what to review (e.g., staged changes, last commit, changes in src/auth/)",
+      'Freeform description of what to review (e.g., staged changes, last commit, changes in src/auth/)',
   }),
   focus: Type.Optional(
     Type.String({
-      description: "Focus area: security, performance, style, or general",
+      description: 'Focus area: security, performance, style, or general',
     }),
   ),
   context: Type.Optional(
     Type.String({
-      description: "What the change is trying to achieve",
+      description: 'What the change is trying to achieve',
     }),
   ),
   skills: Type.Optional(
@@ -73,29 +73,30 @@ const parameters = Type.Object({
         "Skill names to provide specialized context (e.g., 'ios-26', 'drizzle-orm')",
     }),
   ),
-});
+})
 
 /** Build the user message for the subagent based on inputs */
 function buildUserMessage(input: ReviewerInput): string {
-  const parts: string[] = [];
+  const parts: string[] = []
 
-  parts.push(`Diff scope: ${input.diff}`);
+  parts.push(`Diff scope: ${input.diff}`)
 
   if (input.focus) {
-    parts.push(`Focus: ${input.focus}`);
+    parts.push(`Focus: ${input.focus}`)
   }
 
   if (input.context) {
-    parts.push(`Context: ${input.context}`);
+    parts.push(`Context: ${input.context}`)
   }
 
-  return parts.join("\n");
+  return parts.join('\n')
 }
 
 /** Estimate model tier based on review complexity */
 function estimateReviewerTier(input: ReviewerInput): 'complex' | 'standard' {
-  const combined = `${input.diff} ${input.focus || ''} ${input.context || ''}`.toLowerCase()
-  
+  const combined =
+    `${input.diff} ${input.focus || ''} ${input.context || ''}`.toLowerCase()
+
   // Complex for security/performance-focused reviews
   const criticalKeywords = [
     'security',
@@ -113,17 +114,20 @@ function estimateReviewerTier(input: ReviewerInput): 'complex' | 'standard' {
     'leak',
     'concurrency',
   ]
-  
+
   if (criticalKeywords.some(keyword => combined.includes(keyword))) {
     return 'complex'
   }
-  
+
   // Large diffs need more reasoning
   const diffKeywords = ['files changed', 'diff', 'patch']
-  if (diffKeywords.some(keyword => combined.includes(keyword)) && combined.length > 2000) {
+  if (
+    diffKeywords.some(keyword => combined.includes(keyword)) &&
+    combined.length > 2000
+  ) {
     return 'complex'
   }
-  
+
   return 'standard'
 }
 
@@ -133,8 +137,8 @@ export function createReviewerTool(): ToolDefinition<
   ReviewerDetails
 > {
   return {
-    name: "reviewer",
-    label: "Reviewer",
+    name: 'reviewer',
+    label: 'Reviewer',
     description: `Code review agent that analyzes diffs and returns structured feedback.
 
 Inputs:
@@ -149,29 +153,29 @@ Pass relevant skills (e.g., 'ios-26', 'drizzle-orm') to provide specialized cont
     async execute(
       _toolCallId: string,
       args: ReviewerInput,
+      signal: AbortSignal,
       onUpdate: AgentToolUpdateCallback<ReviewerDetails> | undefined,
       ctx: ExtensionContext,
-      signal?: AbortSignal,
     ) {
-      const { diff, focus, context, skills: skillNames } = args;
+      const { diff, focus, context, skills: skillNames } = args
 
       // Resolve skills if provided
-      let resolvedSkills: Skill[] = [];
-      let notFoundSkills: string[] = [];
+      let resolvedSkills: Skill[] = []
+      let notFoundSkills: string[] = []
 
       if (skillNames && skillNames.length > 0) {
-        const result = resolveSkillsByName(skillNames, ctx.cwd);
-        resolvedSkills = result.skills;
-        notFoundSkills = result.notFound;
+        const result = resolveSkillsByName(skillNames, ctx.cwd)
+        resolvedSkills = result.skills
+        notFoundSkills = result.notFound
       }
 
       // Validate: diff is required
       if (!diff) {
-        const error = "Diff scope is required.";
+        const error = 'Diff scope is required.'
         return {
-          content: [{ type: "text" as const, text: `Error: ${error}` }],
+          content: [{ type: 'text' as const, text: `Error: ${error}` }],
           details: {
-            diff: "",
+            diff: '',
             focus,
             context,
             skills: skillNames,
@@ -182,21 +186,21 @@ Pass relevant skills (e.g., 'ios-26', 'drizzle-orm') to provide specialized cont
             spinnerFrame: 0,
             error,
           },
-        };
+        }
       }
 
-      let resolvedModel: { provider: string; id: string } | undefined;
+      let resolvedModel: { provider: string; id: string } | undefined
 
-      let currentToolCalls: SubagentToolCall[] = [];
-      let spinnerFrame = 0;
+      let currentToolCalls: SubagentToolCall[] = []
+      let spinnerFrame = 0
 
       // Set up spinner animation interval
       const spinnerInterval = setInterval(() => {
-        spinnerFrame++;
+        spinnerFrame++
         // Only update if we have running tool calls
-        if (currentToolCalls.some((tc) => tc.status === "running")) {
+        if (currentToolCalls.some(tc => tc.status === 'running')) {
           onUpdate?.({
-            content: [{ type: "text", text: "" }],
+            content: [{ type: 'text', text: '' }],
             details: {
               diff,
               focus,
@@ -209,9 +213,9 @@ Pass relevant skills (e.g., 'ios-26', 'drizzle-orm') to provide specialized cont
               spinnerFrame,
               resolvedModel,
             },
-          });
+          })
         }
-      }, 80);
+      }, 80)
 
       try {
         // Reviewer determines its own tier based on review complexity
@@ -223,13 +227,13 @@ Pass relevant skills (e.g., 'ios-26', 'drizzle-orm') to provide specialized cont
             hints: { focus, context },
           },
           ctx,
-        );
-        const model = selection.model;
-        resolvedModel = { provider: model.provider, id: model.id };
+        )
+        const model = selection.model
+        resolvedModel = { provider: model.provider, id: model.id }
 
         // Publish resolved provider/model as early as possible for footer rendering.
         onUpdate?.({
-          content: [{ type: "text", text: "" }],
+          content: [{ type: 'text', text: '' }],
           details: {
             diff,
             focus,
@@ -242,23 +246,23 @@ Pass relevant skills (e.g., 'ios-26', 'drizzle-orm') to provide specialized cont
             spinnerFrame,
             resolvedModel,
           },
-        });
+        })
 
-        let userMessage = buildUserMessage(args);
+        let userMessage = buildUserMessage(args)
 
         // Append warning if skills not found
         if (notFoundSkills.length > 0) {
-          userMessage += `\n\n**Note:** The following skills were not found and could not be loaded: ${notFoundSkills.join(", ")}`;
+          userMessage += `\n\n**Note:** The following skills were not found and could not be loaded: ${notFoundSkills.join(', ')}`
         }
 
         const bashTool = createBashTool(ctx.cwd) as ReturnType<
           typeof createReadOnlyTools
-        >[number];
-        const tools = [...createReadOnlyTools(ctx.cwd), bashTool];
+        >[number]
+        const tools = [...createReadOnlyTools(ctx.cwd), bashTool]
 
         const result = await executeSubagent(
           {
-            name: "reviewer",
+            name: 'reviewer',
             model,
             systemPrompt: REVIEWER_SYSTEM_PROMPT,
             skills: resolvedSkills,
@@ -275,7 +279,7 @@ Pass relevant skills (e.g., 'ios-26', 'drizzle-orm') to provide specialized cont
           // onTextUpdate
           (_delta, accumulated) => {
             onUpdate?.({
-              content: [{ type: "text", text: accumulated }],
+              content: [{ type: 'text', text: accumulated }],
               details: {
                 diff,
                 focus,
@@ -289,14 +293,14 @@ Pass relevant skills (e.g., 'ios-26', 'drizzle-orm') to provide specialized cont
                 response: accumulated,
                 resolvedModel,
               },
-            });
+            })
           },
           signal,
           // onToolUpdate
           (toolCalls: SubagentToolCall[]) => {
-            currentToolCalls = toolCalls;
+            currentToolCalls = toolCalls
             onUpdate?.({
-              content: [{ type: "text", text: "" }],
+              content: [{ type: 'text', text: '' }],
               details: {
                 diff,
                 focus,
@@ -309,16 +313,16 @@ Pass relevant skills (e.g., 'ios-26', 'drizzle-orm') to provide specialized cont
                 spinnerFrame,
                 resolvedModel,
               },
-            });
+            })
           },
-        );
+        )
 
         const finalToolCalls =
-          result.toolCalls.length > 0 ? result.toolCalls : currentToolCalls;
+          result.toolCalls.length > 0 ? result.toolCalls : currentToolCalls
 
         if (result.aborted) {
           return {
-            content: [{ type: "text" as const, text: "Aborted" }],
+            content: [{ type: 'text' as const, text: 'Aborted' }],
             details: {
               diff,
               focus,
@@ -333,13 +337,13 @@ Pass relevant skills (e.g., 'ios-26', 'drizzle-orm') to provide specialized cont
               usage: result.usage,
               resolvedModel,
             },
-          };
+          }
         }
 
         if (result.error) {
           return {
             content: [
-              { type: "text" as const, text: `Error: ${result.error}` },
+              { type: 'text' as const, text: `Error: ${result.error}` },
             ],
             details: {
               diff,
@@ -355,20 +359,20 @@ Pass relevant skills (e.g., 'ios-26', 'drizzle-orm') to provide specialized cont
               usage: result.usage,
               resolvedModel,
             },
-          };
+          }
         }
 
         // Check if all tool calls failed
         const errorCount = finalToolCalls.filter(
-          (tc) => tc.status === "error",
-        ).length;
+          tc => tc.status === 'error',
+        ).length
         const allFailed =
-          finalToolCalls.length > 0 && errorCount === finalToolCalls.length;
+          finalToolCalls.length > 0 && errorCount === finalToolCalls.length
 
         if (allFailed) {
-          const error = "All tool calls failed";
+          const error = 'All tool calls failed'
           return {
-            content: [{ type: "text" as const, text: `Error: ${error}` }],
+            content: [{ type: 'text' as const, text: `Error: ${error}` }],
             details: {
               diff,
               focus,
@@ -383,11 +387,11 @@ Pass relevant skills (e.g., 'ios-26', 'drizzle-orm') to provide specialized cont
               usage: result.usage,
               resolvedModel,
             },
-          };
+          }
         }
 
         return {
-          content: [{ type: "text" as const, text: result.content }],
+          content: [{ type: 'text' as const, text: result.content }],
           details: {
             diff,
             focus,
@@ -402,62 +406,62 @@ Pass relevant skills (e.g., 'ios-26', 'drizzle-orm') to provide specialized cont
             usage: result.usage,
             resolvedModel,
           },
-        };
+        }
       } finally {
-        clearInterval(spinnerInterval);
+        clearInterval(spinnerInterval)
       }
     },
 
     renderCall(args, theme) {
-      const container = new Container();
+      const container = new Container()
 
       container.addChild(
-        new Text(theme.fg("toolTitle", theme.bold("Reviewer")), 0, 0),
-      );
+        new Text(theme.fg('toolTitle', theme.bold('Reviewer')), 0, 0),
+      )
 
       // Diff scope preview
       if (args.diff) {
-        const maxLen = 80;
+        const maxLen = 80
         const preview =
           args.diff.length > maxLen
             ? `${args.diff.slice(0, maxLen)}...`
-            : args.diff;
+            : args.diff
         container.addChild(
-          new Text(`  ${theme.fg("muted", "Diff: ")}${preview}`, 0, 0),
-        );
+          new Text(`  ${theme.fg('muted', 'Diff: ')}${preview}`, 0, 0),
+        )
       }
 
       // Focus (if provided)
       if (args.focus) {
         container.addChild(
-          new Text(`  ${theme.fg("muted", "Focus: ")}${args.focus}`, 0, 0),
-        );
+          new Text(`  ${theme.fg('muted', 'Focus: ')}${args.focus}`, 0, 0),
+        )
       }
 
       // Context (if provided)
       if (args.context) {
-        const maxLen = 80;
+        const maxLen = 80
         const preview =
           args.context.length > maxLen
             ? `${args.context.slice(0, maxLen)}...`
-            : args.context;
+            : args.context
         container.addChild(
-          new Text(`  ${theme.fg("muted", "Context: ")}${preview}`, 0, 0),
-        );
+          new Text(`  ${theme.fg('muted', 'Context: ')}${preview}`, 0, 0),
+        )
       }
 
       // Show skills if provided
       if (args.skills && args.skills.length > 0) {
         container.addChild(
           new Text(
-            `  ${theme.fg("muted", "Skills: ")}${args.skills.join(", ")}`,
+            `  ${theme.fg('muted', 'Skills: ')}${args.skills.join(', ')}`,
             0,
             0,
           ),
-        );
+        )
       }
 
-      return container;
+      return container
     },
 
     renderResult(
@@ -465,22 +469,22 @@ Pass relevant skills (e.g., 'ios-26', 'drizzle-orm') to provide specialized cont
       options: ToolRenderResultOptions,
       theme: Theme,
     ) {
-      const { details } = result;
-      const { expanded, isPartial } = options;
+      const { details } = result
+      const { expanded, isPartial } = options
 
       // Fallback if details missing
       if (!details) {
-        const text = result.content[0];
-        const content = text?.type === "text" ? text.text : "";
+        const text = result.content[0]
+        const content = text?.type === 'text' ? text.text : ''
         if (content) {
           try {
-            const mdTheme = getMarkdownTheme();
-            return new Markdown(content, 0, 0, mdTheme);
+            const mdTheme = getMarkdownTheme()
+            return new Markdown(content, 0, 0, mdTheme)
           } catch {
-            return new Text(content, 0, 0);
+            return new Text(content, 0, 0)
           }
         }
-        return new Text("", 0, 0);
+        return new Text('', 0, 0)
       }
 
       const {
@@ -491,243 +495,237 @@ Pass relevant skills (e.g., 'ios-26', 'drizzle-orm') to provide specialized cont
         error,
         usage,
         resolvedModel,
-      } = details;
+      } = details
 
       // Counts
-      const doneCount = toolCalls.filter((tc) => tc.status === "done").length;
+      const doneCount = toolCalls.filter(tc => tc.status === 'done').length
       const runningCount = toolCalls.filter(
-        (tc) => tc.status === "running",
-      ).length;
-      const errorCount = toolCalls.filter((tc) => tc.status === "error").length;
+        tc => tc.status === 'running',
+      ).length
+      const errorCount = toolCalls.filter(tc => tc.status === 'error').length
 
       const footer = new SubagentFooter(theme, {
         resolvedModel,
         usage,
         toolCalls,
-      });
+      })
 
       // Aborted state
       if (aborted) {
-        const container = new Container();
+        const container = new Container()
         const suffix =
           doneCount > 0
-            ? ` (${doneCount} ${pluralize(doneCount, "tool call")} completed)`
-            : "";
+            ? ` (${doneCount} ${pluralize(doneCount, 'tool call')} completed)`
+            : ''
         container.addChild(
           new Text(
-            theme.fg("warning", "Aborted") + theme.fg("muted", suffix),
+            theme.fg('warning', 'Aborted') + theme.fg('muted', suffix),
             0,
             0,
           ),
-        );
-        container.addChild(footer);
-        return container;
+        )
+        container.addChild(footer)
+        return container
       }
 
       // Error state
       if (error) {
-        const container = new Container();
-        container.addChild(
-          new Text(theme.fg("error", `Error: ${error}`), 0, 0),
-        );
-        container.addChild(footer);
-        return container;
+        const container = new Container()
+        container.addChild(new Text(theme.fg('error', `Error: ${error}`), 0, 0))
+        container.addChild(footer)
+        return container
       }
 
       // Running + collapsed: show current tool + footer
       if (isPartial && !expanded) {
-        const container = new Container();
+        const container = new Container()
 
-        const currentTool = toolCalls.find((tc) => tc.status === "running");
+        const currentTool = toolCalls.find(tc => tc.status === 'running')
         if (currentTool) {
-          const spinner = getSpinnerFrame(spinnerFrame);
-          const partialText = currentTool.partialResult?.content?.[0];
+          const spinner = getSpinnerFrame(spinnerFrame)
+          const partialText = currentTool.partialResult?.content?.[0]
 
-          if (partialText?.type === "text" && partialText.text) {
-            container.addChild(
-              new Text(`${spinner} ${partialText.text}`, 0, 0),
-            );
+          if (partialText?.type === 'text' && partialText.text) {
+            container.addChild(new Text(`${spinner} ${partialText.text}`, 0, 0))
           } else {
-            const { label, detail } = formatReviewerToolCall(currentTool);
-            const text = detail ? `${label} ${detail}` : label;
-            container.addChild(new Text(`${spinner} ${text}`, 0, 0));
+            const { label, detail } = formatReviewerToolCall(currentTool)
+            const text = detail ? `${label} ${detail}` : label
+            container.addChild(new Text(`${spinner} ${text}`, 0, 0))
           }
         } else {
           container.addChild(
             new Text(
-              theme.fg("muted", `${getSpinnerFrame(spinnerFrame)} thinking...`),
+              theme.fg('muted', `${getSpinnerFrame(spinnerFrame)} thinking...`),
               0,
               0,
             ),
-          );
+          )
         }
 
-        container.addChild(new Spacer(1));
-        container.addChild(footer);
-        return container;
+        container.addChild(new Spacer(1))
+        container.addChild(footer)
+        return container
       }
 
       // Running + expanded: show all tool calls
       if (isPartial) {
-        const container = new Container();
+        const container = new Container()
 
         // Status line
         const statusText =
           runningCount > 0
             ? `${doneCount} done, ${runningCount} running`
-            : "Working...";
-        container.addChild(new Text(theme.fg("muted", statusText), 0, 0));
+            : 'Working...'
+        container.addChild(new Text(theme.fg('muted', statusText), 0, 0))
 
         // Tool calls
         if (toolCalls.length > 0) {
           for (const tc of toolCalls) {
             const indicator =
-              tc.status === "running"
+              tc.status === 'running'
                 ? getSpinnerFrame(spinnerFrame)
-                : tc.status === "done"
+                : tc.status === 'done'
                   ? INDICATOR.done
-                  : INDICATOR.error;
+                  : INDICATOR.error
 
             const indicatorColored =
-              tc.status === "done"
-                ? theme.fg("success", indicator)
-                : tc.status === "error"
-                  ? theme.fg("error", indicator)
-                  : indicator;
+              tc.status === 'done'
+                ? theme.fg('success', indicator)
+                : tc.status === 'error'
+                  ? theme.fg('error', indicator)
+                  : indicator
 
-            let text: string;
-            const partialText = tc.partialResult?.content?.[0];
+            let text: string
+            const partialText = tc.partialResult?.content?.[0]
             if (
-              tc.status === "running" &&
-              partialText?.type === "text" &&
+              tc.status === 'running' &&
+              partialText?.type === 'text' &&
               partialText.text
             ) {
-              text = partialText.text;
+              text = partialText.text
             } else {
-              const { label, detail } = formatReviewerToolCall(tc);
+              const { label, detail } = formatReviewerToolCall(tc)
               text = detail
                 ? `${theme.bold(label)} ${detail}`
-                : theme.bold(label);
+                : theme.bold(label)
             }
-            container.addChild(new Text(`${indicatorColored} ${text}`, 0, 0));
+            container.addChild(new Text(`${indicatorColored} ${text}`, 0, 0))
           }
         }
 
-        container.addChild(new Spacer(1));
-        container.addChild(footer);
-        return container;
+        container.addChild(new Spacer(1))
+        container.addChild(footer)
+        return container
       }
 
       // Done + collapsed
       if (!expanded) {
-        const container = new Container();
+        const container = new Container()
 
         const allFailed =
-          toolCalls.length > 0 && errorCount === toolCalls.length;
+          toolCalls.length > 0 && errorCount === toolCalls.length
         const stats = formatSubagentStats(
           usage ?? { estimatedTokens: Math.round((response?.length ?? 0) / 4) },
           toolCalls.length,
-        );
-        const indicator = allFailed ? INDICATOR.error : INDICATOR.done;
-        const indicatorColor = allFailed ? "error" : "success";
+        )
+        const indicator = allFailed ? INDICATOR.error : INDICATOR.done
+        const indicatorColor = allFailed ? 'error' : 'success'
 
         container.addChild(
           new Text(
             theme.fg(indicatorColor, `${indicator} `) +
-              theme.fg("muted", stats),
+              theme.fg('muted', stats),
             0,
             0,
           ),
-        );
-        container.addChild(footer);
-        return container;
+        )
+        container.addChild(footer)
+        return container
       }
 
       // Done + expanded
-      const container = new Container();
+      const container = new Container()
 
       // Stats line
-      const allFailed = toolCalls.length > 0 && errorCount === toolCalls.length;
+      const allFailed = toolCalls.length > 0 && errorCount === toolCalls.length
       const stats = formatSubagentStats(
         usage ?? { estimatedTokens: Math.round((response?.length ?? 0) / 4) },
         toolCalls.length,
-      );
-      const indicator = allFailed ? INDICATOR.error : INDICATOR.done;
-      const indicatorColor = allFailed ? "error" : "success";
+      )
+      const indicator = allFailed ? INDICATOR.error : INDICATOR.done
+      const indicatorColor = allFailed ? 'error' : 'success'
       container.addChild(
         new Text(
-          theme.fg(indicatorColor, `${indicator} `) + theme.fg("muted", stats),
+          theme.fg(indicatorColor, `${indicator} `) + theme.fg('muted', stats),
           0,
           0,
         ),
-      );
+      )
 
       // Tool calls summary
       if (toolCalls.length > 0) {
-        const toolNames = toolCalls.map(
-          (tc) => formatReviewerToolCall(tc).label,
-        );
-        const counts: Record<string, number> = {};
+        const toolNames = toolCalls.map(tc => formatReviewerToolCall(tc).label)
+        const counts: Record<string, number> = {}
         for (const name of toolNames) {
-          counts[name] = (counts[name] || 0) + 1;
+          counts[name] = (counts[name] || 0) + 1
         }
         const summary = Object.entries(counts)
           .map(([name, count]) => (count > 1 ? `${name} x${count}` : name))
-          .join(", ");
+          .join(', ')
 
         container.addChild(
           new Text(
             theme.fg(
-              "muted",
-              `${toolCalls.length} ${pluralize(toolCalls.length, "tool call")}: `,
+              'muted',
+              `${toolCalls.length} ${pluralize(toolCalls.length, 'tool call')}: `,
             ) + summary,
             0,
             0,
           ),
-        );
+        )
 
         // Show failed tool calls with details
-        const failedCalls = toolCalls.filter((tc) => tc.status === "error");
+        const failedCalls = toolCalls.filter(tc => tc.status === 'error')
         for (const tc of failedCalls) {
-          const { label, detail } = formatReviewerToolCall(tc);
+          const { label, detail } = formatReviewerToolCall(tc)
           const text = detail
             ? `${theme.bold(label)} ${detail}`
-            : theme.bold(label);
+            : theme.bold(label)
           container.addChild(
-            new Text(`${theme.fg("error", INDICATOR.error)} ${text}`, 0, 0),
-          );
+            new Text(`${theme.fg('error', INDICATOR.error)} ${text}`, 0, 0),
+          )
         }
       }
 
       // Response as markdown
       if (response) {
-        container.addChild(new Spacer(1));
-        container.addChild(new Text(theme.fg("muted", "───"), 0, 0));
-        container.addChild(new Spacer(1));
+        container.addChild(new Spacer(1))
+        container.addChild(new Text(theme.fg('muted', '───'), 0, 0))
+        container.addChild(new Spacer(1))
 
         try {
-          const mdTheme = getMarkdownTheme();
-          container.addChild(new Markdown(response, 0, 0, mdTheme));
+          const mdTheme = getMarkdownTheme()
+          container.addChild(new Markdown(response, 0, 0, mdTheme))
         } catch {
-          container.addChild(new Text(response, 0, 0));
+          container.addChild(new Text(response, 0, 0))
         }
 
-        container.addChild(new Spacer(1));
+        container.addChild(new Spacer(1))
       }
 
-      container.addChild(footer);
-      return container;
+      container.addChild(footer)
+      return container
     },
-  };
+  }
 }
 
 /** Execute the reviewer subagent directly (without tool wrapper) */
 export async function executeReviewer(
   input: ReviewerInput,
+  signal: AbortSignal,
+  onUpdate: AgentToolUpdateCallback<ReviewerDetails>,
   ctx: ExtensionContext,
-  onUpdate?: AgentToolUpdateCallback<ReviewerDetails>,
-  signal?: AbortSignal,
 ): Promise<AgentToolResult<ReviewerDetails>> {
-  const tool = createReviewerTool();
-  return tool.execute("direct", input, onUpdate, ctx, signal);
+  const tool = createReviewerTool()
+  return tool.execute('direct', input, signal, onUpdate, ctx)
 }

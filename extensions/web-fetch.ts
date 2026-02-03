@@ -78,7 +78,9 @@ async function fetchWithTimeout(
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
 
   const onAbort = () => controller.abort()
-  signal?.addEventListener('abort', onAbort, { once: true })
+  if (signal && typeof signal.addEventListener === 'function') {
+    signal.addEventListener('abort', onAbort, { once: true })
+  }
 
   try {
     return await fetch(url, {
@@ -92,7 +94,9 @@ async function fetchWithTimeout(
     })
   } finally {
     clearTimeout(timeout)
-    signal?.removeEventListener('abort', onAbort)
+    if (signal && typeof signal.removeEventListener === 'function') {
+      signal.removeEventListener('abort', onAbort)
+    }
   }
 }
 
@@ -168,9 +172,9 @@ Note: This tool does NOT render JavaScript.`,
       format?: WebFetchFormat
       timeoutMs?: number
     },
+    signal: AbortSignal,
     _onUpdate: unknown,
     _ctx: unknown,
-    signal?: AbortSignal,
   ) {
     const { url, format = 'markdown', timeoutMs = 30_000 } = args
     // NOTE: `renderJs` is accepted for backwards compatibility but ignored.

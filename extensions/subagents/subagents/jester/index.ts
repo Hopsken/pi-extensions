@@ -8,17 +8,17 @@ import type {
   ExtensionContext,
   ToolDefinition,
   ToolRenderResultOptions,
-} from "@mariozechner/pi-coding-agent";
-import { getMarkdownTheme, type Theme } from "@mariozechner/pi-coding-agent";
-import { Container, Markdown, Spacer, Text } from "@mariozechner/pi-tui";
-import { Type } from "@sinclair/typebox";
+} from '@mariozechner/pi-coding-agent'
+import { getMarkdownTheme, type Theme } from '@mariozechner/pi-coding-agent'
+import { Container, Markdown, Spacer, Text } from '@mariozechner/pi-tui'
+import { Type } from '@sinclair/typebox'
 
-import { SubagentFooter } from "../../components";
-import { executeSubagent, selectSubagentModel } from "../../lib";
-import type { SubagentToolCall } from "../../lib/types";
-import { getSpinnerFrame } from "../../lib/ui/spinner";
-import { JESTER_SYSTEM_PROMPT } from "./system-prompt";
-import type { JesterDetails, JesterInput } from "./types";
+import { SubagentFooter } from '../../components'
+import { executeSubagent, selectSubagentModel } from '../../lib'
+import type { SubagentToolCall } from '../../lib/types'
+import { getSpinnerFrame } from '../../lib/ui/spinner'
+import { JESTER_SYSTEM_PROMPT } from './system-prompt'
+import type { JesterDetails, JesterInput } from './types'
 
 export const JESTER_GUIDANCE = `
 ## Jester
@@ -35,79 +35,79 @@ Use jester for quick, playful, high-variance answers from the model's training o
 
 **Input:**
 - \`question\`: the prompt/question to answer
-`;
+`
 
 const parameters = Type.Object({
   question: Type.String({
-    description: "Question to answer (no tools; from training data only)",
+    description: 'Question to answer (no tools; from training data only)',
   }),
-});
+})
 
 export function createJesterTool(): ToolDefinition<
   typeof parameters,
   JesterDetails
 > {
   return {
-    name: "jester",
-    label: "Jester",
+    name: 'jester',
+    label: 'Jester',
     description:
-      "High-variance answers from training data only. No tools, no browsing, no files.",
+      'High-variance answers from training data only. No tools, no browsing, no files.',
     parameters,
 
     async execute(
       _toolCallId: string,
       args: JesterInput,
+      signal: AbortSignal,
       onUpdate: AgentToolUpdateCallback<JesterDetails> | undefined,
       ctx: ExtensionContext,
-      signal?: AbortSignal,
     ): Promise<AgentToolResult<JesterDetails>> {
-      const { question } = args;
+      const { question } = args
 
-      let resolvedModel: { provider: string; id: string } | undefined;
+      let resolvedModel: { provider: string; id: string } | undefined
 
-      const toolCalls: SubagentToolCall[] = [];
-      let spinnerFrame = 0;
+      const toolCalls: SubagentToolCall[] = []
+      let spinnerFrame = 0
 
       const spinnerInterval = setInterval(() => {
-        spinnerFrame++;
+        spinnerFrame++
         onUpdate?.({
-          content: [{ type: "text", text: "" }],
+          content: [{ type: 'text', text: '' }],
           details: {
             question,
             toolCalls,
             spinnerFrame,
             resolvedModel,
           },
-        });
-      }, 80);
+        })
+      }, 80)
 
       try {
         // Jester always uses the simplest/cheapest model tier
         const selection = selectSubagentModel(
-          { tier: "simple", userMessage: question },
+          { tier: 'simple', userMessage: question },
           ctx,
-        );
-        const model = selection.model;
-        resolvedModel = { provider: model.provider, id: model.id };
+        )
+        const model = selection.model
+        resolvedModel = { provider: model.provider, id: model.id }
 
         // Publish resolved provider/model as early as possible for footer rendering.
         onUpdate?.({
-          content: [{ type: "text", text: "" }],
+          content: [{ type: 'text', text: '' }],
           details: {
             question,
             toolCalls,
             spinnerFrame,
             resolvedModel,
           },
-        });
+        })
 
         // Temperature is not configurable through createAgentSession today.
         // To maximize randomness, we lean on prompt instructions instead.
-        const userMessage = question;
+        const userMessage = question
 
         const result = await executeSubagent(
           {
-            name: "jester",
+            name: 'jester',
             model,
             systemPrompt: JESTER_SYSTEM_PROMPT,
             tools: [],
@@ -122,7 +122,7 @@ export function createJesterTool(): ToolDefinition<
           ctx,
           (_delta, accumulated) => {
             onUpdate?.({
-              content: [{ type: "text", text: accumulated }],
+              content: [{ type: 'text', text: accumulated }],
               details: {
                 question,
                 toolCalls,
@@ -130,14 +130,14 @@ export function createJesterTool(): ToolDefinition<
                 response: accumulated,
                 resolvedModel,
               },
-            });
+            })
           },
           signal,
-        );
+        )
 
         if (result.aborted) {
           return {
-            content: [{ type: "text" as const, text: "Aborted" }],
+            content: [{ type: 'text' as const, text: 'Aborted' }],
             details: {
               question,
               toolCalls,
@@ -146,13 +146,13 @@ export function createJesterTool(): ToolDefinition<
               usage: result.usage,
               resolvedModel,
             },
-          };
+          }
         }
 
         if (result.error) {
           return {
             content: [
-              { type: "text" as const, text: `Error: ${result.error}` },
+              { type: 'text' as const, text: `Error: ${result.error}` },
             ],
             details: {
               question,
@@ -162,11 +162,11 @@ export function createJesterTool(): ToolDefinition<
               usage: result.usage,
               resolvedModel,
             },
-          };
+          }
         }
 
         return {
-          content: [{ type: "text" as const, text: result.content }],
+          content: [{ type: 'text' as const, text: result.content }],
           details: {
             question,
             toolCalls,
@@ -175,17 +175,17 @@ export function createJesterTool(): ToolDefinition<
             usage: result.usage,
             resolvedModel,
           },
-        };
+        }
       } catch (err) {
         const error =
           err instanceof Error
             ? err.message
-            : typeof err === "string"
+            : typeof err === 'string'
               ? err
-              : JSON.stringify(err);
+              : JSON.stringify(err)
 
         return {
-          content: [{ type: "text" as const, text: `Error: ${error}` }],
+          content: [{ type: 'text' as const, text: `Error: ${error}` }],
           details: {
             question,
             toolCalls,
@@ -193,30 +193,30 @@ export function createJesterTool(): ToolDefinition<
             error,
             resolvedModel,
           },
-        };
+        }
       } finally {
-        clearInterval(spinnerInterval);
+        clearInterval(spinnerInterval)
       }
     },
 
     renderCall(args, theme) {
-      const container = new Container();
+      const container = new Container()
       container.addChild(
-        new Text(theme.fg("toolTitle", theme.bold("Jester")), 0, 0),
-      );
+        new Text(theme.fg('toolTitle', theme.bold('Jester')), 0, 0),
+      )
 
       if (args.question) {
-        const maxLen = 80;
+        const maxLen = 80
         const preview =
           args.question.length > maxLen
             ? `${args.question.slice(0, maxLen)}...`
-            : args.question;
+            : args.question
         container.addChild(
-          new Text(`  ${theme.fg("muted", "Q: ")}${preview}`, 0, 0),
-        );
+          new Text(`  ${theme.fg('muted', 'Q: ')}${preview}`, 0, 0),
+        )
       }
 
-      return container;
+      return container
     },
 
     renderResult(
@@ -224,13 +224,13 @@ export function createJesterTool(): ToolDefinition<
       options: ToolRenderResultOptions,
       theme: Theme,
     ) {
-      const { details } = result;
-      const { expanded, isPartial } = options;
+      const { details } = result
+      const { expanded, isPartial } = options
 
       if (!details) {
-        const text = result.content[0];
-        const content = text?.type === "text" ? text.text : "";
-        return new Text(content || "", 0, 0);
+        const text = result.content[0]
+        const content = text?.type === 'text' ? text.text : ''
+        return new Text(content || '', 0, 0)
       }
 
       const {
@@ -241,78 +241,76 @@ export function createJesterTool(): ToolDefinition<
         toolCalls,
         resolvedModel,
         spinnerFrame,
-      } = details;
+      } = details
 
       const footer = new SubagentFooter(theme, {
         resolvedModel,
         usage,
         toolCalls,
-      });
+      })
 
       if (aborted) {
-        const container = new Container();
-        container.addChild(new Text(theme.fg("warning", "Aborted"), 0, 0));
-        container.addChild(footer);
-        return container;
+        const container = new Container()
+        container.addChild(new Text(theme.fg('warning', 'Aborted'), 0, 0))
+        container.addChild(footer)
+        return container
       }
 
       if (error) {
-        const container = new Container();
-        container.addChild(
-          new Text(theme.fg("error", `Error: ${error}`), 0, 0),
-        );
-        container.addChild(footer);
-        return container;
+        const container = new Container()
+        container.addChild(new Text(theme.fg('error', `Error: ${error}`), 0, 0))
+        container.addChild(footer)
+        return container
       }
 
       if (isPartial) {
-        const container = new Container();
+        const container = new Container()
         container.addChild(
           new Text(
-            theme.fg("muted", `${getSpinnerFrame(spinnerFrame)} jesting...`),
+            theme.fg('muted', `${getSpinnerFrame(spinnerFrame)} jesting...`),
             0,
             0,
           ),
-        );
-        container.addChild(new Spacer(1));
-        container.addChild(footer);
-        return container;
+        )
+        container.addChild(new Spacer(1))
+        container.addChild(footer)
+        return container
       }
 
       if (!expanded) {
-        const container = new Container();
-        container.addChild(new Text(theme.fg("success", "✓ done"), 0, 0));
-        container.addChild(footer);
-        return container;
+        const container = new Container()
+        container.addChild(new Text(theme.fg('success', '✓ done'), 0, 0))
+        container.addChild(footer)
+        return container
       }
 
-      const container = new Container();
+      const container = new Container()
       if (response) {
-        container.addChild(new Text(theme.fg("muted", "───"), 0, 0));
-        container.addChild(new Spacer(1));
+        container.addChild(new Text(theme.fg('muted', '───'), 0, 0))
+        container.addChild(new Spacer(1))
 
         try {
-          const mdTheme = getMarkdownTheme();
-          container.addChild(new Markdown(response, 0, 0, mdTheme));
+          const mdTheme = getMarkdownTheme()
+          container.addChild(new Markdown(response, 0, 0, mdTheme))
         } catch {
-          container.addChild(new Text(response, 0, 0));
+          container.addChild(new Text(response, 0, 0))
         }
 
-        container.addChild(new Spacer(1));
+        container.addChild(new Spacer(1))
       }
 
-      container.addChild(footer);
-      return container;
+      container.addChild(footer)
+      return container
     },
-  };
+  }
 }
 
 export async function executeJester(
   input: JesterInput,
+  signal: AbortSignal,
+  onUpdate: AgentToolUpdateCallback<JesterDetails>,
   ctx: ExtensionContext,
-  onUpdate?: AgentToolUpdateCallback<JesterDetails>,
-  signal?: AbortSignal,
 ): Promise<AgentToolResult<JesterDetails>> {
-  const tool = createJesterTool();
-  return tool.execute("direct", input, onUpdate, ctx, signal);
+  const tool = createJesterTool()
+  return tool.execute('direct', input, signal, onUpdate, ctx)
 }

@@ -158,9 +158,9 @@ Requires: BRAVE_API_KEY environment variable`,
       country?: string
       freshness?: string
     },
+    signal: AbortSignal,
     _onUpdate: unknown,
     _ctx: unknown,
-    signal?: AbortSignal,
   ) {
     const start = Date.now()
     const { query } = args

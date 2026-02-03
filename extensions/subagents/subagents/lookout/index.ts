@@ -80,29 +80,6 @@ const parameters = Type.Object({
   ),
 })
 
-/** Estimate model tier based on query complexity */
-function estimateLookoutTier(query: string): 'simple' | 'standard' {
-  const q = query.toLowerCase()
-
-  // Explanation-heavy queries need more reasoning
-  const explanationKeywords = [
-    'explain',
-    'how does',
-    'walk me through',
-    'trace',
-    'data flow',
-    'control flow',
-    'end-to-end',
-  ]
-
-  if (explanationKeywords.some(keyword => q.includes(keyword))) {
-    return 'standard'
-  }
-
-  // Tools do the work; keep it cheap
-  return 'simple'
-}
-
 /** Create the lookout tool definition for use in extensions */
 export function createLookoutTool(): ToolDefinition<
   typeof parameters,
@@ -124,9 +101,9 @@ Pass relevant skills (e.g., 'ios-26', 'drizzle-orm') to provide specialized cont
     async execute(
       _toolCallId: string,
       args: LookoutInput,
+      signal: AbortSignal,
       onUpdate: AgentToolUpdateCallback<LookoutDetails> | undefined,
       ctx: ExtensionContext,
-      signal?: AbortSignal,
     ) {
       const { query, cwd: customCwd, skills: skillNames } = args
 
@@ -659,10 +636,10 @@ Pass relevant skills (e.g., 'ios-26', 'drizzle-orm') to provide specialized cont
 /** Execute the lookout subagent directly (without tool wrapper) */
 export async function executeLookout(
   input: LookoutInput,
+  signal: AbortSignal,
+  onUpdate: AgentToolUpdateCallback<LookoutDetails>,
   ctx: ExtensionContext,
-  onUpdate?: AgentToolUpdateCallback<LookoutDetails>,
-  signal?: AbortSignal,
 ): Promise<AgentToolResult<LookoutDetails>> {
   const tool = createLookoutTool()
-  return tool.execute('direct', input, onUpdate, ctx, signal)
+  return tool.execute('direct', input, signal, onUpdate, ctx)
 }
