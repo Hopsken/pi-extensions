@@ -3,7 +3,6 @@ import { resolve } from 'node:path'
 import type { ExtensionAPI } from '@mariozechner/pi-coding-agent'
 import { createLsTool, createReadTool } from '@mariozechner/pi-coding-agent'
 import { Type } from '@sinclair/typebox'
-import { setupGetCurrentTimeTool } from '../tools/get-current-time'
 
 /**
  * Parameter schema for READ tool override.
@@ -108,6 +107,4 @@ export function setupTools(pi: ExtensionAPI): void {
       )
     },
   })
-
-  setupGetCurrentTimeTool(pi)
 }

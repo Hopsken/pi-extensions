@@ -1,9 +1,0 @@
-{
-  "name": "@hopsken/pi-the-dumb-zone",
-  "private": true,
-  "pi": {
-    "extensions": [
-      "./index.ts"
-    ]
-  }
-}
